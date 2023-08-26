@@ -13,6 +13,8 @@ from recipe import views
 
 router = DefaultRouter()
 router.register("recipes", views.RecipeViewSet)
+router.register("tags", views.TagViewSet)
+
 """
 DefaultRouter 會為每個操作自動生成相應的 URL，並與視圖集中的方法相匹配。例如，對於 RecipeViewSet：
 

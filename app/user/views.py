@@ -5,6 +5,10 @@
 Views for the user API.
 """
 from rest_framework import generics, authentication, permissions
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.settings import api_settings
+
+from user.serializers import UserSerializer, AuthTokenSerializer
 
 """
 泛型視圖類 (generic view classes)
@@ -30,16 +34,16 @@ RetrieveModelMixin: 提供了檢索特定模型實例的方法。
 UpdateModelMixin: 提供了更新模型實例的方法。
 DestroyModelMixin: 提供了刪除模型實例的方法。
 """
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.settings import api_settings
-
-from user.serializers import UserSerializer, AuthTokenSerializer
 
 
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system."""
 
     serializer_class = UserSerializer
+    """
+    這是一個更專用的視圖，僅用於創建模型的新實例。
+    它可能比 ModelViewSet 更靈活，可以更容易地自定義或接受多種 Content-Type。
+    """
 
 
 class CreateTokenView(ObtainAuthToken):
