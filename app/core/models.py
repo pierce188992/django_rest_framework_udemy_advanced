@@ -61,6 +61,12 @@ class Recipe(models.Model):
     price = models.DecimalField(max_digits=5, decimal_places=2)
     link = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField("Tag")
+    ingredients = models.ManyToManyField("Ingredient")
+    """
+    blank=True 主要與表單驗證有關，而不是數據庫約束。
+    它表示在進行表單驗證時，該字段可以留空。
+    然而，對於數據庫本身，一個整數字段不能存儲空字符串或其他非整數值。
+    """
 
     def __str__(self):
         return self.title
@@ -68,6 +74,19 @@ class Recipe(models.Model):
 
 class Tag(models.Model):
     """Tag for filtering recipes."""
+
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class Ingredient(models.Model):
+    """Ingredient for recipes."""
 
     name = models.CharField(max_length=255)
     user = models.ForeignKey(

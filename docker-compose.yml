@@ -24,6 +24,8 @@ services:
 
   db:
     image: postgres:13-alpine
+    ports:
+      - "5432:5432" # <-- 外部可以訪問 PostgreSQL?
     volumes:
       - dev-db-data:/var/lib/postgresql/data
     environment:

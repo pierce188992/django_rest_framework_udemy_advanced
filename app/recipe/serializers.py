@@ -2,8 +2,17 @@
 Serializers for recipe APIs
 """
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from core.models import Recipe, Tag, Ingredient
 
-from core.models import Recipe, Tag
+
+class IngredientSerializer(serializers.ModelSerializer):
+    """Serializer for ingredients."""
+
+    class Meta:
+        model = Ingredient
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -58,15 +67,24 @@ class RecipeSerializer(serializers.ModelSerializer):
     many=True 表示該字段可以包含多個標籤。
     required=False 表示在創建或更新食譜時，此字段不是必需的。
     """
+    ingredients = IngredientSerializer(many=True, required=False)
 
     class Meta:
         model = Recipe
-        fields = ["id", "title", "time_minutes", "price", "link", "tags"]
+        fields = [
+            "id",
+            "title",
+            "time_minutes",
+            "price",
+            "link",
+            "tags",
+            "ingredients",
+        ]
         read_only_fields = ["id"]
 
     """
-    model: 指定 Recipe 作為要序列化/反序列化的模型。
-    fields: 列出要序列化/反序列化的所有字段。
+    fields: 列出要序列化/反序列化的模型字段。
+    如模型中字段設定為 blank=True 時，對應的序列化器字段會自動被視為 required=False。
     read_only_fields: 定義哪些字段是只讀的。在這裡，id 字段被標記為只讀，因此它不會被反序列化。
     """
 
@@ -90,20 +108,71 @@ class RecipeSerializer(serializers.ModelSerializer):
             """
             recipe.tags.add(tag_obj)
 
+    def _get_or_create_ingredients(self, ingredients, recipe):
+        """Handle getting or creating ingredients as needed."""
+        auth_user = self.context["request"].user
+        for ingredient in ingredients:
+            ingredient_obj, created = Ingredient.objects.get_or_create(
+                user=auth_user,
+                **ingredient,
+            )
+            recipe.ingredients.add(ingredient_obj)
+
     def create(self, validated_data):
         """Create a recipe."""
         tags = validated_data.pop("tags", [])
+        ingredients = validated_data.pop("ingredients", [])
         recipe = Recipe.objects.create(**validated_data)
         self._get_or_create_tags(tags, recipe)
+        self._get_or_create_ingredients(ingredients, recipe)
 
         return recipe
 
     def update(self, instance, validated_data):
+        request = self.context["request"]
+
+        # 檢查 PUT 請求是否包含所有必需的字段
+        if request.method == "PUT":
+            required_fields = [
+                f.name
+                for f in Recipe._meta.fields
+                if f.blank is False and f.name != "id"
+            ]
+            missing_fields = [
+                field for field in required_fields if field not in validated_data
+            ]
+            if missing_fields:
+                raise ValidationError(
+                    f"Missing fields for PUT request: {', '.join(missing_fields)}"
+                )
+            # 清空未在 validated_data 中提供的字段的值
+            for field in Recipe._meta.fields:
+                field_name = field.name
+                if field_name not in validated_data and field_name not in [
+                    "id",
+                    # "tags",
+                    # "ingredients",
+                ]:
+                    default_value = field.default if field.has_default() else ""
+                    setattr(instance, field_name, default_value)
+
+            # 清空未在 validated_data 中提供的多对多字段
+            for m2m_field in Recipe._meta.many_to_many:
+                if m2m_field.name not in validated_data:
+                    # 如果在 PUT 请求中未提供多对多字段，则清除它们 # 如果你再次查询该关系 .tags.all()，得到一个空的查询集（QuerySet）。
+                    getattr(instance, m2m_field.name).clear()
+
         """Update recipe."""
         tags = validated_data.pop("tags", None)
+        # print("tags:", tags)  #  tags: [OrderedDict([('name', 'recipe92')])]
+        ingredients = validated_data.pop("ingredients", None)
         if tags is not None:
             instance.tags.clear()
             self._get_or_create_tags(tags, instance)
+
+        if ingredients is not None:
+            instance.ingredients.clear()
+            self._get_or_create_ingredients(ingredients, instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

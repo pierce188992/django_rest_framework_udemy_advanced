@@ -89,6 +89,7 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASS"),
     }
 }
+# postgresql://devuser:changeme@db:5432/devdb
 
 
 # Password validation
