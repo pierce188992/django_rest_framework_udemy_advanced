@@ -2,6 +2,9 @@
 Tests for recipe APIs.
 """
 from decimal import Decimal
+import tempfile
+import os
+from PIL import Image
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -24,6 +27,11 @@ RECIPES_URL = reverse("recipe:recipe-list")
 def detail_url(recipe_id):
     """Create and return a recipe detail URL."""
     return reverse("recipe:recipe-detail", args=[recipe_id])
+
+
+def image_upload_url(recipe_id):
+    """Create and return an image upload URL."""
+    return reverse("recipe:recipe-upload-image", args=[recipe_id])
 
 
 def create_recipe(user, **params):
@@ -167,9 +175,14 @@ class PrivateRecipeApiTests(TestCase):
             "description": "New recipe description",
             "time_minutes": 10,
             "price": Decimal("2.50"),
+            # "image": "https://example.com/uploads/recipe/recipe.jpg",
         }
         url = detail_url(recipe.id)
         res = self.client.put(url, payload)
+        # print(res) # <Response status_code=200, "application/json">
+        # print(
+        #     res.data
+        # )  # {'id': 14, 'title': 'New recipe title', 'time_minutes': 10, 'price': '2.50', 'link': 'https://example.com/new-recipe.pdf', 'tags': [], 'ingredients': [], 'description': 'New recipe description'}
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         recipe.refresh_from_db()
@@ -404,3 +417,47 @@ class PrivateRecipeApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(recipe.ingredients.count(), 0)
+
+
+class ImageUploadTests(TestCase):
+    """Tests for the image upload API."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@example.com",
+            "password123",
+        )
+        self.client.force_authenticate(self.user)
+        self.recipe = create_recipe(user=self.user)
+
+    def tearDown(self):
+        self.recipe.image.delete()
+        """
+        測試涉及到非數據庫資源，例如文件系統上的文件、外部服務或系統設置等，
+        那麼您可能需要在 tearDown 方法中進行清理，
+        以確保這些資源在測試完成後恢復到正確的狀態。
+        """
+
+    def test_upload_image(self):
+        """Test uploading an image to a recipe."""
+        url = image_upload_url(self.recipe.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image_file:
+            img = Image.new("RGB", (10, 10))
+            img.save(image_file, format="JPEG")  # save img to image_file
+            image_file.seek(0)  # 確保了在將文件發布到API端點時，文件是從開始處被讀取的，這確保了上傳整個文件內容。
+            payload = {"image": image_file}
+            res = self.client.post(url, payload, format="multipart")
+
+        self.recipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(self.recipe.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image."""
+        url = image_upload_url(self.recipe.id)
+        payload = {"image": "notanimage"}
+        res = self.client.post(url, payload, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

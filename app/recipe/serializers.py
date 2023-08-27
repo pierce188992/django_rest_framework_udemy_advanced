@@ -136,7 +136,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             required_fields = [
                 f.name
                 for f in Recipe._meta.fields
-                if f.blank is False and f.name != "id"
+                if not (f.blank is True or f.null is True) and f.name != "id"
+                # if f.blank is False and f.name not in ["id", "image"]
             ]
             missing_fields = [
                 field for field in required_fields if field not in validated_data
@@ -153,8 +154,17 @@ class RecipeSerializer(serializers.ModelSerializer):
                     # "tags",
                     # "ingredients",
                 ]:
+                    # print("field_name:", field_name) # field_name: image
                     default_value = field.default if field.has_default() else ""
                     setattr(instance, field_name, default_value)
+
+                    """
+                    if isinstance(field, models.FileField):
+                        setattr(instance, field_name, None)
+                    else:
+                        default_value = field.default if field.has_default() else ""
+                        setattr(instance, field_name, default_value)
+                    """
 
             # 清空未在 validated_data 中提供的多对多字段
             for m2m_field in Recipe._meta.many_to_many:
@@ -195,4 +205,19 @@ class RecipeDetailSerializer(RecipeSerializer):
     """Serializer for recipe detail view."""
 
     class Meta(RecipeSerializer.Meta):
-        fields = RecipeSerializer.Meta.fields + ["description"]
+        fields = RecipeSerializer.Meta.fields + ["description", "image"]
+
+
+class RecipeImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images to recipes."""
+
+    class Meta:
+        model = Recipe
+        fields = ["id", "image"]
+        read_only_fields = ["id"]
+        extra_kwargs = {"image": {"required": "True"}}
+        """
+        模型層面（null=True）：允許在數據庫中存儲空值。
+        序列化器層面（required=True）：在提交數據進行驗證時，
+        該字段必須被提供。
+        """

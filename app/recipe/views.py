@@ -1,7 +1,9 @@
 """
 Views for the recipe APIs
 """
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
@@ -36,6 +38,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Return the serializer class for request."""
         if self.action == "list":
             return serializers.RecipeSerializer
+        elif self.action == "upload_image":
+            return serializers.RecipeImageSerializer
 
         return self.serializer_class
 
@@ -46,6 +50,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         """Update a recipe."""
         serializer.save(user=self.request.user)
+
+    """
+    @action 裝飾器用來定義一個自定義的動作。
+    methods=["POST"] 表示這個動作只接受 POST 請求。
+    detail=True 表示這是一個針對特定對象的動作，而不是針對整個查詢集。
+    url_path="upload-image" 定義了該動作的 URL 路徑。
+    """
+
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request, pk=None):
+        """Upload an image to recipe."""
+        recipe = (
+            self.get_object()
+        )  # 根據當前視圖的查詢集 (queryset) 和提供的 URL 參數（例如，在 URL 中的主鍵或 slug）來獲取和返回一個單一的對象。
+        serializer = self.get_serializer(recipe, data=request.data)
+        """
+        self.get_serializer() 會根據當前的視圖操作（例如 "list", "create", "upload_image" 等）返回適當的序列化器類。
+        recipe: 這是傳遞給序列化器的第一個參數，它表示要進行序列化或反序列化的對象。
+        data=request.data: 這是建立序列化器時傳遞的 data 參數，
+        它包含客戶端提交的數據。在此情境下，它可能包含要上傳的圖片數據。
+        DRF 會使用這些數據來驗證和保存/更新 recipe 對象。
+        """
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     """
     create 方法處理 POST 請求的邏輯，它是用於創建資料的主要方法。
