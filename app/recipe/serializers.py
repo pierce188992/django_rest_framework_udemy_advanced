@@ -194,7 +194,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 "time_minutes": 45
             }
             將 instance 的 title 屬性設置為 "New Recipe Title"
-            將 instance 的 time_minutes 屬性設置為 45   
+            將 instance 的 time_minutes 屬性設置為 45
             """
 
         instance.save()

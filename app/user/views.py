@@ -16,14 +16,14 @@ from user.serializers import UserSerializer, AuthTokenSerializer
 以下是一些 generics 模塊中提供的常見視圖類：
 
 ListCreateAPIView: 用於讀取資源列表和創建新資源的視圖。
-RetrieveUpdateDestroyAPIView: 
+RetrieveUpdateDestroyAPIView:
 用於讀取、更新或刪除單一資源的視圖。
 ListAPIView: 用於僅讀取資源列表的視圖。
 CreateAPIView: 用於僅創建新資源的視圖。
 RetrieveAPIView: 用於僅讀取單一資源的視圖。
 UpdateAPIView: 用於僅更新單一資源的視圖。
 DestroyAPIView: 用於僅刪除單一資源的視圖。
-每個視圖都預期有一個指定的序列化器 (serializer) 
+每個視圖都預期有一個指定的序列化器 (serializer)
 用來控制如何將模型資料轉換成 JSON，
 以及如何將 JSON 資料驗證和保存到模型中。
 
@@ -59,6 +59,9 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     """
+    使用 TokenAuthentication，您只需要在 DRF 設置中指定它作為認證類，
+    並在您的模型和視圖中進行相應的設置，即可為用戶生成和管理令牌。
+
     TokenAuthentication 的一些基本信息：
     工作原理:
 
@@ -78,9 +81,6 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     相對於其他認證方法（如OAuth2或JWT），TokenAuthentication 較為簡單。
     OAuth2和JWT通常提供更多的功能，如令牌刷新、範圍設定和跨系統認證。
-    
-    使用 TokenAuthentication，您只需要在 DRF 設置中指定它作為認證類，
-    並在您的模型和視圖中進行相應的設置，即可為用戶生成和管理令牌。
     """
 
     permission_classes = [permissions.IsAuthenticated]

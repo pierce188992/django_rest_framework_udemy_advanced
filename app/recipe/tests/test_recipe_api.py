@@ -182,7 +182,10 @@ class PrivateRecipeApiTests(TestCase):
         # print(res) # <Response status_code=200, "application/json">
         # print(
         #     res.data
-        # )  # {'id': 14, 'title': 'New recipe title', 'time_minutes': 10, 'price': '2.50', 'link': 'https://example.com/new-recipe.pdf', 'tags': [], 'ingredients': [], 'description': 'New recipe description'}
+        # )
+        # {'id': 14, 'title': 'New recipe title', 'time_minutes': 10, 'price': '2.50',
+        # 'link': 'https://example.com/new-recipe.pdf', 'tags': [], 'ingredients': [],
+        # 'description': 'New recipe description'}
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         recipe.refresh_from_db()

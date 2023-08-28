@@ -62,13 +62,16 @@ class PrivateIngredientsApiTests(TestCase):
         # print(res)  # <Response status_code=200, "application/json">
         # print(
         #     res.data
-        # )  # [OrderedDict([('id', 5), ('name', 'Vanilla')]), OrderedDict([('id', 4), ('name', 'Kale')])]
+        # )
+        # [OrderedDict([('id', 5),('name', 'Vanilla')]), OrderedDict([('id', 4),('name', 'Kale')])]
         # print(
         #     type(res.data)
-        # )  # <class 'rest_framework.utils.serializer_helpers.ReturnList'>
+        # )
+        # <class 'rest_framework.utils.serializer_helpers.ReturnList'>
         # print(
         #     serializer.data
-        # )  # [OrderedDict([('id', 5), ('name', 'Vanilla')]), OrderedDict([('id', 4), ('name', 'Kale')])]
+        # )
+        # [OrderedDict([('id', 5),('name', 'Vanilla')]), OrderedDict([('id', 4),('name', 'Kale')])]
         """
         在 Python 3.7+ 中，標準的字典已經能夠記住鍵的插入順序，因此在新版本的 DRF 和 Python 中，
         序列化的數據可能直接是標準的字典而不是 OrderedDict。

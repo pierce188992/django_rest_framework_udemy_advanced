@@ -1,10 +1,7 @@
-# from django.contrib import admin  # noqa
-
-# # Register your models here.
-
 """
 Django admin customization.
 """
+from core import models
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
@@ -16,7 +13,6 @@ from django.utils.translation import gettext_lazy as _
 class MyModel(models.Model):
     name = models.CharField(_("Name"), max_length=255)
 """
-from core import models
 
 
 class UserAdmin(BaseUserAdmin):
